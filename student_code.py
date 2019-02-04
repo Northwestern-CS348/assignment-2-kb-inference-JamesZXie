@@ -160,20 +160,20 @@ class KnowledgeBase(object):
                     self.facts.remove(curr)
                 else:
                     self.rules.remove(curr)
+
+                for supported_fact in curr.supports_facts:
+                    queue.append(supported_fact)
+                    for fact_rule_pair in supported_fact.supported_by:
+                        if curr in fact_rule_pair:
+                            supported_fact.supported_by.remove(fact_rule_pair)
+
+                for supported_rule in curr.supports_rules:
+                    queue.append(supported_rule)
+                    for fact_rule_pair in supported_rule.supported_by:
+                        if curr in fact_rule_pair:
+                            supported_rule.supported_by.remove(fact_rule_pair)
             else:
-                print("error: attempt to remove supported fact|rule", curr)
-
-            for supported_fact in curr.supports_facts:
-                queue.append(supported_fact)
-                for fact_rule_pair in supported_fact.supported_by:
-                    if curr in fact_rule_pair:
-                        supported_fact.supported_by.remove(fact_rule_pair)
-
-            for supported_rule in curr.supports_rules:
-                queue.append(supported_rule)
-                for fact_rule_pair in supported_rule.supported_by:
-                    if curr in fact_rule_pair:
-                        supported_rule.supported_by.remove(fact_rule_pair)
+                print("Attempt to remove supported fact|rule", curr)
 
 
 
