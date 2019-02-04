@@ -55,6 +55,7 @@ class KnowledgeBase(object):
             None
         """
         printv("Adding {!r}", 1, verbose, [fact_rule])
+
         if isinstance(fact_rule, Fact):
             if fact_rule not in self.facts:
                 self.facts.append(fact_rule)
@@ -100,7 +101,7 @@ class KnowledgeBase(object):
         Returns:
             listof Bindings|False - list of Bindings if result found, False otherwise
         """
-        print("Asking {!r}".format(fact))
+
         if factq(fact):
             f = Fact(fact.statement)
             bindings_lst = ListOfBindings()
@@ -116,8 +117,21 @@ class KnowledgeBase(object):
             print("Invalid ask:", fact.statement)
             return []
 
+
+
     def kb_retract(self, fact):
         """Retract a fact from the KB
+
+        Pseudo:
+            if it's indeed a fact:
+                find the fact in the db it wants us to remove.
+                Add it to the queue
+
+            while queue is not empty
+                curr = pop the queue
+                if curr is unsupported, remove it from the db
+                for every supported fact and rule, remove it's pair from the supported_by,
+                    then append these supported facts and rules to the queue.
 
         Args:
             fact (Fact) - Fact to be retracted
@@ -128,7 +142,40 @@ class KnowledgeBase(object):
         printv("Retracting {!r}", 0, verbose, [fact])
         ####################################################
         # Student code goes here
-        
+
+        queue = []
+
+        # find the fact
+        if type(fact) == Fact:
+            for a_fact in self.facts:
+                if match(a_fact.statement, fact.statement, None):
+                    print("found", a_fact)
+                    queue.append(a_fact)
+
+        while len(queue) > 0:
+            curr = queue.pop(0)
+            # if curr not supported
+            if len(curr.supported_by) == 0:
+                if type(curr) == Fact:
+                    self.facts.remove(curr)
+                else:
+                    self.rules.remove(curr)
+            else:
+                print("error: attempt to remove supported fact|rule", curr)
+
+            for supported_fact in curr.supports_facts:
+                queue.append(supported_fact)
+                for fact_rule_pair in supported_fact.supported_by:
+                    if curr in fact_rule_pair:
+                        supported_fact.supported_by.remove(fact_rule_pair)
+
+            for supported_rule in curr.supports_rules:
+                queue.append(supported_rule)
+                for fact_rule_pair in supported_rule.supported_by:
+                    if curr in fact_rule_pair:
+                        supported_rule.supported_by.remove(fact_rule_pair)
+
+
 
 class InferenceEngine(object):
     def fc_infer(self, fact, rule, kb):
@@ -146,3 +193,30 @@ class InferenceEngine(object):
             [fact.statement, rule.lhs, rule.rhs])
         ####################################################
         # Student code goes here
+
+        bindings = match(rule.lhs[0], fact.statement, None)
+
+        if bindings:
+            # make new rule here paired with bindings for the match
+            if len(rule.lhs) == 1:
+                #new fact... then assert it
+                newfact = Fact(instantiate(rule.rhs, bindings), [[fact, rule]])
+                fact.supports_facts.append(newfact)
+                rule.supports_facts.append(newfact)
+                kb.kb_assert(newfact)
+            else:
+                right = instantiate(rule.rhs, bindings)
+                left = []
+
+                for lrulestatement in rule.lhs:
+                    left.append(instantiate(lrulestatement, bindings))
+                # we remove the first item of the lhs because that's what we inferred the new rule from, so we know that
+                # condition will always be satisfied.
+                del left[0]
+
+                newrule = Rule([left, right], [[fact, rule]])
+                fact.supports_rules.append(newrule)
+                rule.supports_rules.append(newrule)
+                kb.kb_assert(newrule)
+        else:
+            return None
