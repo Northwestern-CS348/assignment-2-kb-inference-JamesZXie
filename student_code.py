@@ -123,15 +123,20 @@ class KnowledgeBase(object):
         """Retract a fact from the KB
 
         Pseudo:
+        (takes a fact)
+
+            create a queue.
+
             if it's indeed a fact:
                 find the fact in the db it wants us to remove.
                 Add it to the queue
 
             while queue is not empty
-                curr = pop the queue
-                if curr is unsupported, remove it from the db
+                curr_node = remove the first item in the list, then set curr equal to it.
+                -if curr is unsupported, remove it from the db-
                 for every supported fact and rule, remove it's pair from the supported_by,
                     then append these supported facts and rules to the queue.
+
 
         Args:
             fact (Fact) - Fact to be retracted
@@ -153,7 +158,7 @@ class KnowledgeBase(object):
                 return None
             queue.append(found_fact)
 
-        while len(queue) > 0:
+        while queue:
             curr = queue.pop(0)
             # if curr not supported
             if len(curr.supported_by) == 0:
