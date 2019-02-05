@@ -147,33 +147,31 @@ class KnowledgeBase(object):
 
         # find the fact
         if type(fact) == Fact:
-            for a_fact in self.facts:
-                if match(a_fact.statement, fact.statement, None):
-                    print("found", a_fact)
-                    queue.append(a_fact)
+            found_fact = self._get_fact(fact)
+            if not found_fact:
+                print("Error, fact doesn't exist in DB")
+                return None
+            queue.append(found_fact)
 
         while len(queue) > 0:
             curr = queue.pop(0)
             # if curr not supported
             if len(curr.supported_by) == 0:
-                if type(curr) == Fact:
+                if isinstance(curr, Fact):
                     self.facts.remove(curr)
                 else:
                     self.rules.remove(curr)
-
                 for supported_fact in curr.supports_facts:
-                    queue.append(supported_fact)
                     for fact_rule_pair in supported_fact.supported_by:
                         if curr in fact_rule_pair:
-                            supported_fact.supported_by.remove(fact_rule_pair)
+                            self._get_fact(supported_fact).supported_by.remove(fact_rule_pair)
+                    queue.append(self._get_fact(supported_fact))
 
                 for supported_rule in curr.supports_rules:
-                    queue.append(supported_rule)
                     for fact_rule_pair in supported_rule.supported_by:
                         if curr in fact_rule_pair:
-                            supported_rule.supported_by.remove(fact_rule_pair)
-            else:
-                print("Attempt to remove supported fact|rule", curr)
+                            self._get_rule(supported_rule).supported_by.remove(fact_rule_pair)
+                    queue.append(self._get_rule(supported_rule))
 
 
 
